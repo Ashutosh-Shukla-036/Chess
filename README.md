@@ -1,4 +1,4 @@
-# Chess Analyzer ♟️
+# ChessMind♟️
 
 An **Open Source**, comprehensive full-stack chess analysis platform that provides real-time engine evaluations, PGN parsing, and a modern interactive user interface.
 
@@ -7,11 +7,9 @@ An **Open Source**, comprehensive full-stack chess analysis platform that provid
 The easiest way to run the entire project is using **Docker Compose**.
 
 ### 1. Prerequisites
-- Docker and Docker Compose installed.
-- **Stockfish Binary**: You must download a Stockfish binary compatible with your system and place it in `backend/engine/bin/stockfish`.
-    - **Linux/WSL**: Use the Linux x86-64 binary.
-    - **Windows**: (Manual setup only) Use the `.exe` version.
-    - See [Stockfish Setup](file:///Chess/backend/engine/STOCKFISH_SETUP.md) for detailed instructions.
+- Docker and Docker Compose installed. That's it! Works on **Windows, macOS, and Linux**.
+
+> **No need to manually download Stockfish.** Docker containers always run Linux internally, so the build automatically downloads the correct Linux binary regardless of your host OS.
 
 ### 2. Run the Application
 1. **Fork the Repository**: Click the **Fork** button at the top of the [GitHub Repository](https://github.com/Ashutosh-Shukla-036/Chess.git).
@@ -67,7 +65,7 @@ graph TD
 - **Framework**: [FastAPI](https://fastapi.tiangolo.com/) (Python 3.11+)
 - **Chess Logic**: [python-chess](https://python-chess.readthedocs.io/)
 - **Real-time**: WebSockets
-- **Task Queue**: Redis
+- **Caching**: Redis
 
 ### Frontend
 - **Framework**: [React](https://reactjs.org/) with [Vite](https://vitejs.dev/)
@@ -77,7 +75,7 @@ graph TD
 - **Charts**: Recharts
 
 ### Analysis Engine
-- **Engine**: [Stockfish](https://stockfishchess.org/) (External binary required)
+- **Engine**: [Stockfish](https://stockfishchess.org/) (auto-downloaded during Docker build)
 
 ---
 
@@ -95,6 +93,7 @@ Chess/
 ├── docker-compose.yml  # Container orchestration
 └── build.sh            # Unix build script
 ```
+
 ---
 
 ## 🛠️ Development Setup
@@ -111,20 +110,20 @@ If you prefer to run services individually without Docker, please refer to the s
 
 The backend can be configured using environment variables. Create a `.env` file in the `backend` directory based on `.env.example`.
 
-| Variable          | Description                                          | Default               |
-|-------------------|------------------------------------------------------|-----------------------|
-| `ENGINE_POOL_SIZE`| Number of Stockfish engine instances inv the pool    | `2`                   |
-| `REDIS_URL`       | URL for the Redis server                             | `redis:localhost:6379`|
-| `STOCKFISH_PATH`  | Path to the Stockfish binary                         | `your stockfish path` |
-| `ENGINE_THREADS`  | Number of threads per Stockfish instance             | `1`                   |
-| `LOG_LEVEL`       | Logging level (`DEBUG`, `INFO`, `WARNING`, `ERROR`)  | `INFO`                |
-| `REDIS_ANALYSIS_TTL`| Time-to-live for cached analysis in Redis (seconds)| `864000`              |
+| Variable              | Description                                           | Default                    |
+|-----------------------|-------------------------------------------------------|----------------------------|
+| `ENGINE_POOL_SIZE`    | Number of Stockfish engine instances in the pool      | `2`                        |
+| `REDIS_URL`           | URL for the Redis server                              | `redis://redis:6379`       |
+| `STOCKFISH_PATH`      | Path to the Stockfish binary                          | `/app/engine/bin/stockfish`|
+| `ENGINE_THREADS`      | Number of threads per Stockfish instance              | `1`                        |
+| `LOG_LEVEL`           | Logging level (`DEBUG`, `INFO`, `WARNING`, `ERROR`)   | `INFO`                     |
+| `REDIS_ANALYSIS_TTL`  | Time-to-live for cached analysis in Redis (seconds)   | `864000`                   |
 
 ---
 
 ## 🔍 Troubleshooting
 
-- **Stockfish Binary Error**: Ensure the binary is placed in `backend/engine/bin/stockfish` and is executable (`chmod +x backend/engine/bin/stockfish`).
+- **Stockfish Binary Error**: The Docker build downloads the binary automatically. If running without Docker, download the binary manually for your platform from [stockfishchess.org](https://stockfishchess.org/download/), place it at `backend/engine/bin/stockfish` (Linux/macOS) or update `STOCKFISH_PATH` in your `.env` for Windows, and ensure it's executable (`chmod +x backend/engine/bin/stockfish` on Linux/macOS).
 - **Redis Connection**: If running without Docker, ensure Redis is installed and running locally on port `6379`.
 - **Port Conflict**: If port `5173` or `8000` is already in use, you can change them in `docker-compose.yml`.
 
