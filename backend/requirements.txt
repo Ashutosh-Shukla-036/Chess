@@ -1,0 +1,11 @@
+fastapi==0.109.0
+uvicorn==0.27.0
+python-chess==1.999
+redis==5.0.1
+pydantic==2.5.3
+pydantic-settings==2.1.0
+requests==2.31.0
+sqlalchemy
+psycopg2-binary
+websockets==12.0
+python-multipart==0.0.6

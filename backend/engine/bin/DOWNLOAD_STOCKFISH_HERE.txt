@@ -1,0 +1,9 @@
+# PLACEHOLDER - Download Stockfish Binary
+
+This is a placeholder file. You need to download the actual Stockfish binary.
+
+See STOCKFISH_SETUP.md for instructions.
+
+The binary should be a Linux x86-64 executable, NOT a Windows .exe file.
+
+Download from: https://github.com/official-stockfish/Stockfish/releases
