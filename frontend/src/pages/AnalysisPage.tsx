@@ -35,10 +35,10 @@ const labelColors: Record<string, string> = {
 };
 
 const StatCard = ({ label, value, sub }: { label: string; value: string | number; sub?: string }) => (
-    <div className="bg-white/5 rounded-lg p-2.5 border border-white/5">
-        <p className="text-[10px] text-gray-500 uppercase tracking-wider">{label}</p>
-        <p className="text-lg font-mono font-bold text-white mt-0.5 leading-tight">{value}</p>
-        {sub && <p className="text-[10px] text-gray-600 mt-0.5">{sub}</p>}
+    <div className="bg-white/5 rounded-lg p-1.5 border border-white/5">
+        <p className="text-[9px] text-gray-500 uppercase tracking-wider">{label}</p>
+        <p className="text-base font-mono font-bold text-white mt-0.5 leading-tight">{value}</p>
+        {sub && <p className="text-[9px] text-gray-600 mt-0.5">{sub}</p>}
     </div>
 );
 
@@ -56,9 +56,22 @@ export const AnalysisPage: React.FC<AnalysisPageProps> = ({ analysis, onBack }) 
     const [isMuted, setIsMuted] = useState(getMuteState());
     const [isInspectorOpen, setIsInspectorOpen] = useState(false);
     const [rightTab, setRightTab] = useState<RightTab>('move');
+    const [boardOrientation, setBoardOrientation] = useState<'white' | 'black'>('white');
     const navigate = useNavigate();
 
-    useEffect(() => { resetCelebrations(); playSound('complete'); }, []);
+    useEffect(() => {
+        resetCelebrations();
+        playSound('complete');
+
+        // Auto-jump to first critical moment
+        if (analysis.summary.critical_moments && analysis.summary.critical_moments.length > 0) {
+            const firstCritical = analysis.summary.critical_moments[0];
+            const idx = analysis.moves.findIndex(m => m.move_number === firstCritical.move_number && m.side === firstCritical.side);
+            if (idx !== -1) {
+                setTimeout(() => setCurrentMoveIndex(idx), 500);
+            }
+        }
+    }, []);
 
     useEffect(() => {
         const newGame = new Chess();
@@ -137,30 +150,57 @@ export const AnalysisPage: React.FC<AnalysisPageProps> = ({ analysis, onBack }) 
     return (
         <div className="h-screen bg-[#080c1e] text-white flex flex-col overflow-hidden">
             {/* Header */}
-            <header className="h-12 shrink-0 border-b border-white/10 flex items-center justify-between px-4 bg-[#080c1e]/95 backdrop-blur z-20">
+            <header className="h-14 shrink-0 border-b border-white/10 flex items-center justify-between px-4 bg-[#080c1e]/95 backdrop-blur z-20">
                 <div className="flex items-center gap-3 min-w-0">
                     <button onClick={onBack} className="p-1.5 hover:bg-white/10 rounded-lg transition-colors shrink-0">
                         <ChevronLeft className="w-4 h-4" />
                     </button>
                     <div className="min-w-0">
                         <h1 className="font-bold text-sm truncate leading-tight">{analysis.summary.opening || 'Chess Game Analysis'}</h1>
-                        <p className="text-[10px] text-gray-500">
-                            {gi?.white ?? 'White'} vs {gi?.black ?? 'Black'}
-                            {gi?.date ? ` · ${gi.date}` : ''}
-                            {gi?.result ? ` · ${gi.result}` : ''}
-                        </p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                            <p className="text-[10px] text-gray-500">
+                                {gi?.white ?? 'White'} vs {gi?.black ?? 'Black'}
+                                {gi?.date ? ` · ${gi.date}` : ''}
+                                {gi?.result ? ` · ${gi.result}` : ''}
+                            </p>
+                            {/* Quick accuracy comparison */}
+                            <div className="flex items-center gap-1.5">
+                                <div className="flex items-center gap-1">
+                                    <div className="w-12 h-1 bg-white/10 rounded-full overflow-hidden">
+                                        <div
+                                            className="h-full bg-emerald-400 transition-all duration-1000"
+                                            style={{ width: `${analysis.summary.accuracy.white}%` }}
+                                        />
+                                    </div>
+                                    <span className="text-[9px] font-mono text-gray-500 w-7">{analysis.summary.accuracy.white.toFixed(0)}%</span>
+                                </div>
+                                <span className="text-[8px] text-gray-600">vs</span>
+                                <div className="flex items-center gap-1">
+                                    <span className="text-[9px] font-mono text-gray-500 w-7 text-right">{analysis.summary.accuracy.black.toFixed(0)}%</span>
+                                    <div className="w-12 h-1 bg-white/10 rounded-full overflow-hidden">
+                                        <div
+                                            className="h-full bg-blue-400 transition-all duration-1000"
+                                            style={{ width: `${analysis.summary.accuracy.black}%` }}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
+                    <button
+                        onClick={() => setBoardOrientation(prev => prev === 'white' ? 'black' : 'white')}
+                        className="p-1.5 hover:bg-white/10 rounded-lg text-gray-500 hover:text-white transition-all"
+                        title="Flip board"
+                    >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                    </button>
                     <button onClick={() => { const s = toggleMute(); setIsMuted(s); toast.success(s ? 'Muted' : 'Unmuted'); }}
                         className="p-1.5 hover:bg-white/10 rounded-lg text-gray-500 hover:text-white transition-all">
                         {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-                    </button>
-                    <button className="p-1.5 hover:bg-white/10 rounded-lg text-gray-500 hover:text-white transition-all" onClick={() => toast.success('Saved!')}>
-                        <Save className="w-4 h-4" />
-                    </button>
-                    <button className="p-1.5 hover:bg-white/10 rounded-lg text-gray-500 hover:text-white transition-all" onClick={() => toast.success('Link copied!')}>
-                        <Share2 className="w-4 h-4" />
                     </button>
                     <button className="p-1.5 hover:bg-white/10 rounded-lg text-gray-500 hover:text-white transition-all" onClick={() => navigate('/how-it-works')}>
                         <BookOpen className="w-4 h-4" />
@@ -199,6 +239,7 @@ export const AnalysisPage: React.FC<AnalysisPageProps> = ({ analysis, onBack }) 
                             <ChessboardComponent
                                 fen={game.fen()}
                                 arrows={arrows}
+                                boardOrientation={boardOrientation}
                                 highlightSquares={currentMove ? {
                                     [currentMove.uci.substring(0, 2)]: { backgroundColor: 'rgba(255,255,0,0.22)' },
                                     [currentMove.uci.substring(2, 4)]: { backgroundColor: 'rgba(255,255,0,0.22)' },
@@ -230,6 +271,45 @@ export const AnalysisPage: React.FC<AnalysisPageProps> = ({ analysis, onBack }) 
                         <span className="ml-3 text-xs text-gray-600 font-mono tabular-nums">
                             {currentMoveIndex + 1} / {analysis.moves.length}
                         </span>
+
+                        {/* Critical moment navigation */}
+                        {analysis.summary.critical_moments && analysis.summary.critical_moments.length > 0 && (
+                            <>
+                                <div className="w-[1px] h-6 bg-white/10 mx-1" />
+                                <button
+                                    onClick={() => {
+                                        const criticalIndices = analysis.moves
+                                            .map((m, i) => m.is_critical ? i : -1)
+                                            .filter(i => i !== -1 && i < currentMoveIndex);
+                                        if (criticalIndices.length > 0) {
+                                            setCurrentMoveIndex(criticalIndices[criticalIndices.length - 1]);
+                                            setRightTab('move');
+                                        }
+                                    }}
+                                    title="Previous Critical"
+                                    className="p-1.5 hover:bg-yellow-500/10 rounded-lg transition-all text-yellow-500/60 hover:text-yellow-400 flex items-center gap-1"
+                                >
+                                    <ChevronLeft className="w-3.5 h-3.5" />
+                                    <span className="text-[10px] font-bold">⚡</span>
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        const criticalIndices = analysis.moves
+                                            .map((m, i) => m.is_critical ? i : -1)
+                                            .filter(i => i !== -1 && i > currentMoveIndex);
+                                        if (criticalIndices.length > 0) {
+                                            setCurrentMoveIndex(criticalIndices[0]);
+                                            setRightTab('move');
+                                        }
+                                    }}
+                                    title="Next Critical"
+                                    className="p-1.5 hover:bg-yellow-500/10 rounded-lg transition-all text-yellow-500/60 hover:text-yellow-400 flex items-center gap-1"
+                                >
+                                    <span className="text-[10px] font-bold">⚡</span>
+                                    <ChevronRight className="w-3.5 h-3.5" />
+                                </button>
+                            </>
+                        )}
                     </div>
                 </div>
 
@@ -237,19 +317,13 @@ export const AnalysisPage: React.FC<AnalysisPageProps> = ({ analysis, onBack }) 
                 <div className="w-[320px] shrink-0 border-l border-white/10 bg-[#0a0e27] flex flex-col overflow-hidden">
 
                     {/* Accuracy + Graph - always visible */}
-                    <div className="shrink-0 p-3 border-b border-white/10">
-                        <AccuracyMeters
-                            whiteAccuracy={analysis.summary.accuracy.white}
-                            blackAccuracy={analysis.summary.accuracy.black}
-                        />
-                    </div>
-                    <div className="shrink-0 px-3 py-2 border-b border-white/10">
-                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Evaluation</p>
+                    <div className="shrink-0 px-2 py-1.5 border-b border-white/10">
+                        <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-1">Evaluation</p>
                         <EvaluationGraph
                             data={graphData}
                             currentMoveIndex={currentMoveIndex}
                             onPointClick={(idx) => setCurrentMoveIndex(idx)}
-                            className="h-[75px]"
+                            className="h-[70px]"
                         />
                     </div>
 
@@ -276,24 +350,24 @@ export const AnalysisPage: React.FC<AnalysisPageProps> = ({ analysis, onBack }) 
                     </div>
 
                     {/* Tab content */}
-                    <div className="flex-1 overflow-y-auto min-h-0 p-3">
+                    <div className="flex-1 overflow-y-auto min-h-0 p-2">
 
                         {/* ── MOVE TAB ── */}
                         {rightTab === 'move' && (
                             currentMove ? (
-                                <div className="space-y-3">
-                                    {/* Move header */}
+                                <div className="space-y-2">
+                                    {/* Move header - compact */}
                                     <div className="flex items-start justify-between">
                                         <div>
-                                            <span className="text-3xl font-bold font-mono text-white">{currentMove.san}</span>
-                                            <p className="text-[10px] text-gray-500 mt-0.5">
+                                            <span className="text-2xl font-bold font-mono text-white">{currentMove.san}</span>
+                                            <p className="text-[9px] text-gray-500 mt-0.5">
                                                 Move {currentMove.move_number} · {currentMove.side === 'white' ? '⬜ White' : '⬛ Black'} · {currentMove.phase}
                                             </p>
                                         </div>
                                         <div className="text-right">
                                             <p className={`text-xl font-mono font-bold ${evalColor}`}>{evalDisplay}</p>
                                             {currentMove.mate_before != null && (
-                                                <p className="text-[10px] text-gray-500">was M{Math.abs(currentMove.mate_before)}</p>
+                                                <p className="text-[9px] text-gray-500">was M{Math.abs(currentMove.mate_before)}</p>
                                             )}
                                         </div>
                                     </div>
@@ -301,96 +375,82 @@ export const AnalysisPage: React.FC<AnalysisPageProps> = ({ analysis, onBack }) 
                                     {/* Label */}
                                     <LabelBadge label={currentMove.label} />
 
-                                    {/* Eval stats */}
-                                    <div className="grid grid-cols-2 gap-2">
-                                        <StatCard label="Accuracy" value={`${currentMove.accuracy?.toFixed(1) ?? '—'}%`} />
-                                        <StatCard label="Win % After" value={`${currentMove.win_percent_after?.toFixed(1) ?? '—'}%`} />
-                                        <StatCard label="Eval Before"
-                                            value={currentMove.eval_before != null ? `${currentMove.eval_before > 0 ? '+' : ''}${currentMove.eval_before.toFixed(2)}` : '—'} />
-                                        <StatCard label="Eval After"
-                                            value={currentMove.eval_after != null ? `${currentMove.eval_after > 0 ? '+' : ''}${currentMove.eval_after.toFixed(2)}` : evalDisplay ?? '—'} />
-                                        <StatCard label="Delta"
-                                            value={currentMove.delta != null ? `${currentMove.delta > 0 ? '+' : ''}${currentMove.delta.toFixed(2)}` : '—'}
-                                            sub="eval change" />
-                                        <StatCard label="Win % Delta"
-                                            value={currentMove.win_percent_delta != null ? `${currentMove.win_percent_delta > 0 ? '+' : ''}${currentMove.win_percent_delta.toFixed(1)}%` : '—'}
-                                            sub="from mover's view" />
-                                        <StatCard label="Win % Before" value={`${currentMove.win_percent_before?.toFixed(1) ?? '—'}%`} />
-                                        <StatCard label="Mate Before"
-                                            value={currentMove.mate_before != null ? `M${Math.abs(currentMove.mate_before)}` : '—'} />
-                                    </div>
-
-                                    {/* Best move */}
+                                    {/* Best move - PRIORITY #1 */}
                                     {currentMove.best_move && currentMove.best_move !== currentMove.uci && (
-                                        <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-3">
-                                            <p className="text-[10px] text-emerald-500 uppercase tracking-wider font-bold mb-1.5">Engine Best Move</p>
+                                        <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-2">
+                                            <p className="text-[9px] text-emerald-500 uppercase tracking-wider font-bold mb-1">Engine Best Move</p>
                                             <div className="flex items-center justify-between">
-                                                <span className="font-mono font-bold text-emerald-400 text-xl">
+                                                <span className="font-mono font-bold text-emerald-400 text-lg">
                                                     {currentMove.best_move_san || currentMove.best_move}
                                                 </span>
-                                                <span className="text-[10px] font-mono text-gray-500 bg-white/5 px-2 py-0.5 rounded">
+                                                <span className="text-[9px] font-mono text-gray-500 bg-white/5 px-1.5 py-0.5 rounded">
                                                     {currentMove.best_move}
                                                 </span>
                                             </div>
                                         </div>
                                     )}
 
-                                    {/* Opening */}
+                                    {/* Opening - PRIORITY #2 */}
                                     {currentMove.opening && (
-                                        <div className="bg-white/5 border border-white/5 rounded-lg p-3">
-                                            <p className="text-[10px] text-gray-500 uppercase tracking-wider font-bold mb-1">Opening</p>
-                                            <p className="text-xs text-gray-300 leading-snug">{currentMove.opening}</p>
+                                        <div className="bg-white/5 border border-white/5 rounded-lg p-2">
+                                            <p className="text-[9px] text-gray-500 uppercase tracking-wider font-bold mb-0.5">Opening</p>
+                                            <p className="text-[11px] text-gray-300 leading-snug">{currentMove.opening}</p>
                                         </div>
                                     )}
 
-                                    {/* Tactical info */}
+                                    {/* Compact eval stats - only key metrics */}
+                                    <div className="grid grid-cols-3 gap-1.5">
+                                        <StatCard label="Eval Δ"
+                                            value={currentMove.delta != null ? `${currentMove.delta > 0 ? '+' : ''}${currentMove.delta.toFixed(2)}` : '—'} />
+                                        <StatCard label="Win %" value={`${currentMove.win_percent_after?.toFixed(1) ?? '—'}%`} />
+                                        <StatCard label="Accuracy" value={`${currentMove.accuracy?.toFixed(1) ?? '—'}%`} />
+                                    </div>
+
+                                    {/* Expandable detailed stats */}
+                                    <details className="bg-white/5 border border-white/5 rounded-lg">
+                                        <summary className="p-2 cursor-pointer text-[9px] text-gray-400 uppercase tracking-wider font-bold hover:text-gray-300">
+                                            More Stats
+                                        </summary>
+                                        <div className="p-2 pt-0 grid grid-cols-2 gap-1.5">
+                                            <StatCard label="Eval Before"
+                                                value={currentMove.eval_before != null ? `${currentMove.eval_before > 0 ? '+' : ''}${currentMove.eval_before.toFixed(2)}` : '—'} />
+                                            <StatCard label="Eval After"
+                                                value={currentMove.eval_after != null ? `${currentMove.eval_after > 0 ? '+' : ''}${currentMove.eval_after.toFixed(2)}` : evalDisplay ?? '—'} />
+                                            <StatCard label="Win % Δ"
+                                                value={currentMove.win_percent_delta != null ? `${currentMove.win_percent_delta > 0 ? '+' : ''}${currentMove.win_percent_delta.toFixed(1)}%` : '—'} />
+                                            <StatCard label="Win % Before" value={`${currentMove.win_percent_before?.toFixed(1) ?? '—'}%`} />
+                                            {currentMove.mate_before != null && (
+                                                <StatCard label="Mate Before" value={`M${Math.abs(currentMove.mate_before)}`} />
+                                            )}
+                                        </div>
+                                    </details>
+
+                                    {/* Tactical info - compact */}
                                     {currentMove.tactical_info && (
-                                        <div className="bg-white/5 border border-white/5 rounded-lg p-3 space-y-2">
-                                            <p className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">Tactical Info</p>
-                                            <div className="flex flex-wrap gap-1.5">
-                                                {currentMove.tactical_info.is_capture && <span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400 border border-orange-500/20">Capture</span>}
-                                                {currentMove.tactical_info.is_check && <span className="text-[10px] px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400 border border-yellow-500/20">Check</span>}
-                                                {currentMove.tactical_info.is_checkmate && <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/20">Checkmate</span>}
-                                                {currentMove.tactical_info.is_sacrifice && <span className="text-[10px] px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-400 border border-pink-500/20">Sacrifice</span>}
-                                                {currentMove.tactical_info.is_castle && <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/20">Castle</span>}
-                                                {currentMove.tactical_info.is_promotion && <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/20">Promotion</span>}
-                                                {currentMove.tactical_info.is_en_passant && <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/20">En Passant</span>}
-                                                {currentMove.tactical_info.is_exchange_sacrifice && <span className="text-[10px] px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/20">Exchange Sac</span>}
-                                                {currentMove.tactical_info.is_recapture && <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-500/20 text-gray-400 border border-gray-500/20">Recapture</span>}
-                                            </div>
-                                            <div className="grid grid-cols-2 gap-1.5 pt-1">
-                                                {currentMove.tactical_info.moved_piece && (
-                                                    <div className="text-[10px] text-gray-500">
-                                                        Piece: <span className="text-gray-300 capitalize">{currentMove.tactical_info.moved_piece}</span>
-                                                    </div>
-                                                )}
-                                                {currentMove.tactical_info.sacrifice_value > 0 && (
-                                                    <div className="text-[10px] text-gray-500">
-                                                        Sac value: <span className="text-pink-400">{currentMove.tactical_info.sacrifice_value}</span>
-                                                    </div>
-                                                )}
-                                                {currentMove.tactical_info.captured_piece_value > 0 && (
-                                                    <div className="text-[10px] text-gray-500">
-                                                        Captured: <span className="text-orange-400">{currentMove.tactical_info.captured_piece_value}</span>
-                                                    </div>
-                                                )}
-                                                {currentMove.tactical_info.moved_piece_value > 0 && (
-                                                    <div className="text-[10px] text-gray-500">
-                                                        Piece val: <span className="text-gray-300">{currentMove.tactical_info.moved_piece_value}</span>
-                                                    </div>
-                                                )}
+                                        <div className="bg-white/5 border border-white/5 rounded-lg p-2">
+                                            <p className="text-[9px] text-gray-500 uppercase tracking-wider font-bold mb-1">Tactical</p>
+                                            <div className="flex flex-wrap gap-1">
+                                                {currentMove.tactical_info.is_capture && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-orange-500/20 text-orange-400 border border-orange-500/20">Capture</span>}
+                                                {currentMove.tactical_info.is_check && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400 border border-yellow-500/20">Check</span>}
+                                                {currentMove.tactical_info.is_checkmate && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/20">Checkmate</span>}
+                                                {currentMove.tactical_info.is_sacrifice && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-pink-500/20 text-pink-400 border border-pink-500/20">Sacrifice</span>}
+                                                {currentMove.tactical_info.is_castle && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/20">Castle</span>}
+                                                {currentMove.tactical_info.is_promotion && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/20">Promotion</span>}
+                                                {currentMove.tactical_info.is_en_passant && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/20">En Passant</span>}
+                                                {currentMove.tactical_info.is_exchange_sacrifice && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/20">Exch Sac</span>}
+                                                {currentMove.tactical_info.is_recapture && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-gray-500/20 text-gray-400 border border-gray-500/20">Recapture</span>}
                                             </div>
                                         </div>
                                     )}
 
-                                    {/* Flags */}
+                                    {/* Flags - compact */}
                                     {(currentMove.is_critical || currentMove.is_sacrifice) && (
-                                        <div className="flex gap-2">
+                                        <div className="flex gap-1.5">
                                             {currentMove.is_critical && (
-                                                <span className="text-[10px] px-2 py-0.5 rounded-full bg-yellow-500/10 text-yellow-400 border border-yellow-500/20">⚡ Critical</span>
+                                                <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-yellow-500/10 text-yellow-400 border border-yellow-500/20">⚡ Critical</span>
                                             )}
                                             {currentMove.is_sacrifice && (
-                                                <span className="text-[10px] px-2 py-0.5 rounded-full bg-pink-500/10 text-pink-400 border border-pink-500/20">♟ Sacrifice</span>
+                                                <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-pink-500/10 text-pink-400 border border-pink-500/20">🔥 Sacrifice</span>
                                             )}
                                         </div>
                                     )}

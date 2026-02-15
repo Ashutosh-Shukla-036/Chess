@@ -78,55 +78,82 @@ export const MoveTimeline: React.FC<MoveTimelineProps> = ({ moves, currentMoveIn
         else rows[rowIndex].black = { ...move, index };
     });
 
+    // Detect phase changes
+    const getPhaseLabel = (moveNum: number) => {
+        if (moveNum <= 10) return { phase: 'opening', icon: '📖', label: 'Opening' };
+        if (moveNum <= 30) return { phase: 'middlegame', icon: '⚔️', label: 'Middlegame' };
+        return { phase: 'endgame', icon: '👑', label: 'Endgame' };
+    };
+
     return (
         <div
             ref={scrollRef}
             className="h-full overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10 space-y-0.5 pr-1"
         >
-            {rows.map((row, rowIdx) => (
-                <div key={rowIdx} className="flex items-center gap-1.5 rounded-lg hover:bg-white/5 transition-colors px-1 py-0.5">
-                    {/* Move number */}
-                    <span className="text-[10px] text-gray-600 font-mono w-6 shrink-0 text-right">{row.moveNumber}.</span>
+            {rows.map((row, rowIdx) => {
+                const prevPhase = rowIdx > 0 ? getPhaseLabel(rows[rowIdx - 1].moveNumber).phase : null;
+                const currentPhase = getPhaseLabel(row.moveNumber);
+                const showPhaseSeparator = prevPhase !== currentPhase.phase;
 
-                    {/* White move */}
-                    {row.white ? (
-                        <div
-                            ref={row.white.index === currentMoveIndex ? activeRef : null}
-                            onClick={() => handleMoveClick(row.white!, row.white!.index)}
-                            className={clsx(
-                                "flex-1 flex items-center gap-1.5 px-2 py-1.5 rounded-md cursor-pointer border transition-all duration-150",
-                                qualityColors[row.white.label] || 'bg-white/5 text-gray-300 border-white/10',
-                                row.white.index === currentMoveIndex
-                                    ? "ring-1 ring-white/50 scale-[1.02] brightness-125"
-                                    : "hover:brightness-110"
-                            )}
-                        >
-                            <span className={clsx("w-1.5 h-1.5 rounded-full shrink-0", qualityDot[row.white.label] || 'bg-gray-500')} />
-                            <span className="text-sm font-semibold font-mono">{row.white.san}</span>
-                            {row.white.isCritical && <Star className="w-2.5 h-2.5 ml-auto text-yellow-400 fill-yellow-400 shrink-0" />}
-                        </div>
-                    ) : <div className="flex-1" />}
+                return (
+                    <React.Fragment key={rowIdx}>
+                        {/* Phase separator */}
+                        {showPhaseSeparator && (
+                            <div className="flex items-center gap-2 py-1.5 px-1 mt-2">
+                                <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+                                <span className="text-[9px] text-gray-500 uppercase tracking-wider font-bold flex items-center gap-1">
+                                    <span>{currentPhase.icon}</span>
+                                    {currentPhase.label}
+                                </span>
+                                <div className="h-[1px] flex-1 bg-gradient-to-r from-white/20 via-transparent to-transparent" />
+                            </div>
+                        )}
 
-                    {/* Black move */}
-                    {row.black ? (
-                        <div
-                            ref={row.black.index === currentMoveIndex ? activeRef : null}
-                            onClick={() => handleMoveClick(row.black!, row.black!.index)}
-                            className={clsx(
-                                "flex-1 flex items-center gap-1.5 px-2 py-1.5 rounded-md cursor-pointer border transition-all duration-150",
-                                qualityColors[row.black.label] || 'bg-white/5 text-gray-300 border-white/10',
-                                row.black.index === currentMoveIndex
-                                    ? "ring-1 ring-white/50 scale-[1.02] brightness-125"
-                                    : "hover:brightness-110"
-                            )}
-                        >
-                            <span className={clsx("w-1.5 h-1.5 rounded-full shrink-0", qualityDot[row.black.label] || 'bg-gray-500')} />
-                            <span className="text-sm font-semibold font-mono">{row.black.san}</span>
-                            {row.black.isCritical && <Star className="w-2.5 h-2.5 ml-auto text-yellow-400 fill-yellow-400 shrink-0" />}
+                        <div className="flex items-center gap-1.5 rounded-lg hover:bg-white/5 transition-colors px-1 py-0.5">
+                            {/* Move number */}
+                            <span className="text-[10px] text-gray-600 font-mono w-6 shrink-0 text-right">{row.moveNumber}.</span>
+
+                            {/* White move */}
+                            {row.white ? (
+                                <div
+                                    ref={row.white.index === currentMoveIndex ? activeRef : null}
+                                    onClick={() => handleMoveClick(row.white!, row.white!.index)}
+                                    className={clsx(
+                                        "flex-1 flex items-center gap-1.5 px-2 py-1.5 rounded-md cursor-pointer border transition-all duration-150",
+                                        qualityColors[row.white.label] || 'bg-white/5 text-gray-300 border-white/10',
+                                        row.white.index === currentMoveIndex
+                                            ? "ring-1 ring-white/50 scale-[1.02] brightness-125"
+                                            : "hover:brightness-110"
+                                    )}
+                                >
+                                    <span className={clsx("w-1.5 h-1.5 rounded-full shrink-0", qualityDot[row.white.label] || 'bg-gray-500')} />
+                                    <span className="text-sm font-semibold font-mono">{row.white.san}</span>
+                                    {row.white.isCritical && <Star className="w-2.5 h-2.5 ml-auto text-yellow-400 fill-yellow-400 shrink-0" />}
+                                </div>
+                            ) : <div className="flex-1" />}
+
+                            {/* Black move */}
+                            {row.black ? (
+                                <div
+                                    ref={row.black.index === currentMoveIndex ? activeRef : null}
+                                    onClick={() => handleMoveClick(row.black!, row.black!.index)}
+                                    className={clsx(
+                                        "flex-1 flex items-center gap-1.5 px-2 py-1.5 rounded-md cursor-pointer border transition-all duration-150",
+                                        qualityColors[row.black.label] || 'bg-white/5 text-gray-300 border-white/10',
+                                        row.black.index === currentMoveIndex
+                                            ? "ring-1 ring-white/50 scale-[1.02] brightness-125"
+                                            : "hover:brightness-110"
+                                    )}
+                                >
+                                    <span className={clsx("w-1.5 h-1.5 rounded-full shrink-0", qualityDot[row.black.label] || 'bg-gray-500')} />
+                                    <span className="text-sm font-semibold font-mono">{row.black.san}</span>
+                                    {row.black.isCritical && <Star className="w-2.5 h-2.5 ml-auto text-yellow-400 fill-yellow-400 shrink-0" />}
+                                </div>
+                            ) : <div className="flex-1" />}
                         </div>
-                    ) : <div className="flex-1" />}
-                </div>
-            ))}
+                    </React.Fragment>
+                );
+            })}
         </div>
     );
 };

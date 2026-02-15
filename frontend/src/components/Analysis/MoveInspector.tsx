@@ -110,11 +110,11 @@ export const MoveInspector: React.FC<MoveInspectorProps> = ({ isOpen, onClose, m
                             <div className="bg-[#0a0e27] p-4 rounded-xl border border-white/5 space-y-2 text-sm text-gray-300">
                                 <div className="flex justify-between">
                                     <span>Depth</span>
-                                    <span className="font-mono text-white">20</span>
+                                    <span className="font-mono text-white">22</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span>Engine</span>
-                                    <span className="font-mono text-white">Stockfish 16</span>
+                                    <span className="font-mono text-white">Stockfish 18</span>
                                 </div>
                             </div>
                         </div>
